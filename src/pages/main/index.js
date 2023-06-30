@@ -9,6 +9,13 @@ const Main = () => {
 	const [searchState, setSearchState] = useState(false);
 	const debouncedSearch = useDebounce(searchInputValue, 500);
 	const [searchResults, setSearchResults] = useState([]);
+	const [recentSearches, setRecentSearches] = useState([]);
+
+	useEffect(() => {
+		const recentSearches =
+			JSON.parse(localStorage.getItem("recentSearches")) || [];
+		setRecentSearches(recentSearches);
+	}, []);
 
 	// API 호출 함수
 	const getSearchInfos = async searchInputValue => {
@@ -17,8 +24,6 @@ const Main = () => {
 			setSearchResults(data);
 			console.log(searchResults);
 			setSearchState(true);
-			// localStorage.setItem(`${query}`, JSON.stringify(data));
-			// return data;
 		} catch (err) {
 			console.log("err");
 		}
@@ -32,82 +37,180 @@ const Main = () => {
 		}
 	}, [debouncedSearch]);
 
-	// 캐싱 구현 함수
-	// const sendQuery = async q => {
-	// 	const savedQuery = localStorage.getItem(`${q}`);
-	// 	if (JSON.parse(savedQuery)) {
-	// 		setSearchState(JSON.parse(savedQuery));
-	// 		console.log("cachedData");
-	// 	} else {
-	// 		console.log("newData");
-	// 		const data = await getSearchInfos(q);
-	// 		setSearchState(data);
-	// 	}
-	// };
+	const handleAddLocal = () => {
+		const newRecentSearches = recentSearches.filter(
+			search => search !== debouncedSearch,
+		);
+		newRecentSearches.unshift(debouncedSearch);
+		const recentSearchesLimited = newRecentSearches.slice(0, 5);
+		setRecentSearches(recentSearchesLimited);
+		localStorage.setItem(
+			"recentSearches",
+			JSON.stringify(recentSearchesLimited),
+		);
+	};
 
 	return (
 		<>
 			<MainTextBox>
 				<MainH1>Goooogle</MainH1>
 			</MainTextBox>
-			<InputBox>
-				<InputBox2>
-					<input
-						onChange={e => {
-							setSearchInputValue(e.target.value);
+			<MainContainer>
+				<MainSearchBox>
+					<SearchBox
+						onChange={e => setSearchInputValue(e.target.value)}
+						placeholder="Search"
+						onKeyPress={e => {
+							if (e.key === "Enter") {
+								handleAddLocal();
+							}
 						}}
 					/>
-					<button onClick={() => null}>⚲</button>
-				</InputBox2>
+					<SearchBtn onClick={handleAddLocal}>Google 검색</SearchBtn>
+				</MainSearchBox>
+
 				{searchState && searchResults.length > 0 && (
-					<ul>
-						{searchResults.map((result, index) => (
-							<li key={index}>{result}</li>
+					<SearchResultsList>
+						{searchResults.map((result, idx) => (
+							<SearchResult key={idx}>{result}</SearchResult>
 						))}
-					</ul>
+					</SearchResultsList>
 				)}
-			</InputBox>
+
+				{recentSearches.length > 0 && (
+					<RecentSearchesContainer>
+						<RecentSearchesTitle>최근 검색어</RecentSearchesTitle>
+						<RecentSearchesUl>
+							{recentSearches.map((recentSearch, idx) => (
+								<RecentSearchesLi
+									key={idx}
+									onClick={() => setSearchInputValue(recentSearch)}
+								>
+									{recentSearch}
+								</RecentSearchesLi>
+							))}
+						</RecentSearchesUl>
+					</RecentSearchesContainer>
+				)}
+			</MainContainer>
 		</>
 	);
 };
 
 export default Main;
 
-const InputBox = styled.div`
-	${flexCenter}
-	align-content: flex-start;
-	flex-direction: column;
-	ul {
-		width: 40%;
-		list-style: none;
-		background-color: white;
-		border: 0.5px solid black;
-		color: black;
-		text-align: center;
-	}
-`;
-
-const InputBox2 = styled.div`
-	width: 40%;
-	/* background-color: black; */
-	flex-direction: row;
-	input {
-		width: 85%;
-		border: 0.5px solid black;
-	}
-	button {
-		width: 15%;
-		background-color: white;
-		border: 0.5px solid black;
-	}
-`;
-
 const MainTextBox = styled.div`
-	margin-bottom: 30px;
+	${flexCenter}
+	width: 100%;
+	height: 200px;
+	background: #f2f2f2;
 `;
 
-const MainH1 = styled.div`
-	${flexCenter}
-	font-size: 36px;
+const MainH1 = styled.h1`
+	font-size: 70px;
 	font-weight: 800;
+	color: #111;
+`;
+
+const MainContainer = styled.div`
+	padding: 20px;
+`;
+
+const MainSearchBox = styled.div`
+	width: 100%;
+	margin-bottom: 20px;
+`;
+
+const SearchBox = styled.input`
+	width: 85%;
+	height: 40px;
+	padding: 10px;
+	border: 1px solid #dadce0;
+	border-radius: 10px 0 0 10px;
+	font-size: 18px;
+	line-height: 24px;
+	&:focus {
+		outline: none;
+	}
+`;
+
+const SearchBtn = styled.button`
+	padding: 6px 16px;
+	border-radius: 0 10px 10px 0;
+	background-color: #f8f9fa;
+	border: 1px solid #dadce0;
+	border-left: none;
+	font-size: 18px;
+	line-height: 24px;
+	&:hover {
+		cursor: pointer;
+		background-color: blue;
+		color: white;
+	}
+`;
+
+const SearchResultsList = styled.ul`
+	padding: 20px;
+	background-color: white;
+	border: 0.8px solid grey;
+	border-radius: 12px;
+`;
+
+const SearchResult = styled.li`
+	list-style: none;
+	margin-bottom: 20px;
+	color: black;
+`;
+
+const SearchResultTitle = styled.a`
+	font-size: 20px;
+	font-weight: 700;
+	text-decoration: none;
+	color: #1a0dab;
+	&:hover {
+		text-decoration: underline;
+	}
+`;
+
+const SearchResultLink = styled.span`
+	margin-left: 10px;
+	color: #70757a;
+`;
+
+const SearchResultSnippet = styled.p`
+	font-size: 16px;
+	line-height: 22px;
+	color: #4f5b66;
+	margin-top: 10px;
+`;
+
+const RecentSearchesContainer = styled.div`
+	margin-top: 20px;
+	padding: 20px;
+	background-color: white;
+	border: 0.8px solid grey;
+	border-radius: 12px;
+`;
+
+const RecentSearchesTitle = styled.h3`
+	font-size: 18px;
+	font-weight: 700;
+	margin-bottom: 10px;
+`;
+
+const RecentSearchesUl = styled.ul`
+	padding: 0;
+	margin: 0;
+	list-style: none;
+`;
+
+const RecentSearchesLi = styled.li`
+	cursor: pointer;
+	margin-bottom: 10px;
+	font-size: 16px;
+	line-height: 22px;
+	color: #4f5b66;
+	&:hover {
+		text-decoration: underline;
+	}
 `;

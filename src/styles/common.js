@@ -5,3 +5,9 @@ export const flexCenter = css`
 	justify-content: center;
 	align-items: center;
 `;
+
+export const horizontalCenter = css`
+	position: absolute;
+	top: 50%;
+	transform: translateY(-50%);
+`;
