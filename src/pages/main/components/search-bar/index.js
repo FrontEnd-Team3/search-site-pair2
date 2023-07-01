@@ -2,12 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import { LocalStorageUtils } from "../../../../utils/localstorage";
 import RecentQueries from "../recent-queries";
 import axiosInstance from "core/@core";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import SearchList from "../search-list";
 
 const SearchBar = () => {
 	const [query, setQuery] = useState("");
 	const [related, setRelated] = useState([]);
-	const [searchParams, setSearchParams] = useSearchParams();
 	const navigate = useNavigate();
 
 	let timeoutId;
@@ -42,9 +42,7 @@ const SearchBar = () => {
 	const eventFunction = e => {
 		e.preventDefault();
 		LocalStorageUtils.addNewQuery(formRef.current.query.value);
-		console.log(LocalStorageUtils.getRecentQueries());
-		searchParams.set("query", formRef.current.query.value);
-		navigate(`/search?${searchParams.toString()}`);
+		navigate(`/search?query=${formRef.current.query.value}`);
 	};
 	// LocalStorageUtils.clearRecentQueries();
 	return (
@@ -64,7 +62,7 @@ const SearchBar = () => {
 				검색어 삭제
 			</button>
 			{query.length ? (
-				related.map(oneRelated => <div>{oneRelated}</div>)
+				<SearchList queries={related}></SearchList>
 			) : (
 				<RecentQueries />
 			)}

@@ -1,5 +1,5 @@
 import search from "core/axiosApi";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 const Search = () => {
@@ -17,7 +17,10 @@ const Search = () => {
 			setResults([]);
 		}
 	};
-	setQuery();
+	useEffect(() => {
+		setQuery();
+	}, []);
+
 	// 가능하면 이거 헤더 컴포넌트로 빼기
 	return (
 		<>
