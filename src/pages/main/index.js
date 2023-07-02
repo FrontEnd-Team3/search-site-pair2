@@ -1,4 +1,5 @@
 import { axiosInstance } from "apis/@core";
+import ScrollListEventHandler from "hooks/scrollList";
 import useDebounce from "hooks/useDebounce";
 import { useEffect, useState } from "react";
 import styled from "styled-components";
@@ -10,12 +11,17 @@ const Main = () => {
 	const debouncedSearch = useDebounce(searchInputValue, 500);
 	const [searchResults, setSearchResults] = useState([]);
 	const [recentSearches, setRecentSearches] = useState([]);
+	const [selectedIndex, setSelectedIndex] = useState(null);
 
 	useEffect(() => {
 		const recentSearches =
 			JSON.parse(localStorage.getItem("recentSearches")) || [];
 		setRecentSearches(recentSearches);
 	}, []);
+
+	useEffect(() => {
+		setSelectedIndex(null);
+	}, [searchResults, setSearchResults]);
 
 	// API 호출 함수
 	const getSearchInfos = async searchInputValue => {
@@ -26,7 +32,21 @@ const Main = () => {
 			setSearchState(true);
 		} catch (err) {
 			console.log("err");
+			// setSearchResults([]);
 		}
+	};
+
+	//
+
+	const calculateSelected = () => {
+		if (!searchState)
+			return { idx: selectedIndex, arrayType: "recentSearches" };
+		if (selectedIndex < searchResults.length)
+			return { idx: selectedIndex, arrayType: "searchResults" };
+		return {
+			idx: selectedIndex - searchResults.length,
+			arrayType: "recentSearches",
+		};
 	};
 
 	useEffect(() => {
@@ -36,6 +56,22 @@ const Main = () => {
 			setSearchState(false);
 		}
 	}, [debouncedSearch]);
+
+	useEffect(() => {
+		let queries;
+		if (!searchState) queries = recentSearches;
+		else queries = [...searchResults, ...recentSearches];
+		const eventHandler = ScrollListEventHandler(
+			queries,
+			selectedIndex,
+			setSelectedIndex,
+		);
+		document.addEventListener("keydown", eventHandler);
+
+		return () => {
+			document.removeEventListener("keydown", eventHandler);
+		};
+	}, [selectedIndex]);
 
 	const handleAddLocal = () => {
 		const newRecentSearches = recentSearches.filter(
@@ -72,7 +108,15 @@ const Main = () => {
 				{searchState && searchResults.length > 0 && (
 					<SearchResultsList>
 						{searchResults.map((result, idx) => (
-							<SearchResult key={idx}>{result}</SearchResult>
+							<SearchResult
+								key={idx}
+								selected={
+									calculateSelected().arrayType === "searchResults" &&
+									calculateSelected().idx === idx
+								}
+							>
+								{result}
+							</SearchResult>
 						))}
 					</SearchResultsList>
 				)}
@@ -85,7 +129,16 @@ const Main = () => {
 								<RecentSearchesLi
 									key={idx}
 									onClick={() => setSearchInputValue(recentSearch)}
+									selected={
+										calculateSelected().arrayType === "recentSearches" &&
+										calculateSelected().idx === idx
+									}
 								>
+									{console.log(calculateSelected())}
+									{console.log(
+										calculateSelected().arrayType === "recentSearches" &&
+											calculateSelected().idx === idx,
+									)}
 									{recentSearch}
 								</RecentSearchesLi>
 							))}
@@ -160,6 +213,7 @@ const SearchResult = styled.li`
 	list-style: none;
 	margin-bottom: 20px;
 	color: black;
+	background-color: ${({ selected }) => (selected ? "#d9d9d9" : "transparent")};
 `;
 
 const SearchResultTitle = styled.a`
@@ -213,4 +267,5 @@ const RecentSearchesLi = styled.li`
 	&:hover {
 		text-decoration: underline;
 	}
+	background-color: ${({ selected }) => (selected ? "#d9d9d9" : "transparent")};
 `;
