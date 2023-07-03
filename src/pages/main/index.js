@@ -5,9 +5,10 @@ import SearchResult from "components/SearchResult";
 import useDebounce from "hooks/useDebounce";
 import useRecentSearches from "hooks/useRecentSearches";
 import useSearch from "hooks/useSearch";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import styled from "styled-components";
 import { flexCenter } from "styles/common";
+import ScrollListEventHandler from "hooks/scrollList";
 
 const Main = () => {
 	const [searchInputValue, setSearchInputValue] = useState("");
@@ -15,6 +16,7 @@ const Main = () => {
 	const { searchResults, searchState, setSearchResults } =
 		useSearch(debouncedSearch);
 	const { recentSearches, handleAddLocal } = useRecentSearches();
+	const [selectedIndex, setSelectedIndex] = useState(null);
 
 	const handleSearchResultClick = index => {
 		const searchResult = searchResults[index];
@@ -27,6 +29,33 @@ const Main = () => {
 			handleAddLocal(debouncedSearch);
 		}
 	};
+
+	const calculateSelected = () => {
+		if (!searchState)
+			return { idx: selectedIndex, arrayType: "recentSearches" };
+		if (selectedIndex < searchResults.length)
+			return { idx: selectedIndex, arrayType: "searchResults" };
+		return {
+			idx: selectedIndex - searchResults.length,
+			arrayType: "recentSearches",
+		};
+	};
+
+	useEffect(() => {
+		let queries;
+		if (!searchState) queries = recentSearches;
+		else queries = [...searchResults, ...recentSearches];
+		const eventHandler = ScrollListEventHandler(
+			queries,
+			selectedIndex,
+			setSelectedIndex,
+		);
+		document.addEventListener("keydown", eventHandler);
+
+		return () => {
+			document.removeEventListener("keydown", eventHandler);
+		};
+	}, [selectedIndex]);
 
 	return (
 		<>
@@ -43,6 +72,7 @@ const Main = () => {
 					{searchState && searchResults.length > 0 && (
 						<>
 							<SearchResult
+								calculateSelected={calculateSelected}
 								data={searchResults}
 								onClick={handleSearchResultClick}
 							/>
@@ -56,8 +86,9 @@ const Main = () => {
 						</RecentTextBox>
 
 						<RecentSearchesLi
+							calculateSelected={calculateSelected}
 							data={recentSearches}
-							onClick={idx => setSearchInputValue(recentSearches[idx])}
+							onClick={() => setSearchInputValue}
 						/>
 					</RecentBox>
 				)}
@@ -86,6 +117,8 @@ const ResultBox = styled.div`
 	margin-bottom: 20px;
 	display: flex;
 	flex-direction: column;
+	color: black;
+	background-color: ${({ selected }) => (selected ? "#d9d9d9" : "transparent")};
 `;
 
 const RecentBox = styled.div`

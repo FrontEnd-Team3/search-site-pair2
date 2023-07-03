@@ -1,9 +1,16 @@
 import styled from "styled-components";
 
-function RecentSearchesLi({ data, onClick }) {
+function RecentSearchesLi({ data, onClick, calculateSelected }) {
 	return data.map((item, index) => (
 		<>
-			<RecentSearchesList key={index} onClick={() => onClick(index)}>
+			<RecentSearchesList
+				key={index}
+				onClick={() => onClick(index)}
+				selected={
+					calculateSelected().arrayType === "recentSearches" &&
+					calculateSelected().index === index
+				}
+			>
 				{item}
 			</RecentSearchesList>
 		</>
@@ -21,4 +28,5 @@ const RecentSearchesList = styled.li`
 	&:hover {
 		background-color: #e9e9e9;
 	}
+	background-color: ${({ selected }) => (selected ? "#e9e9e9" : "transparent")};
 `;

@@ -7,7 +7,14 @@ function SearchResult({ data, onClick }) {
 				<p>자동 검색어</p>
 			</ResultTextBox>
 			{data.map((item, index) => (
-				<SearchResultLi key={index} onClick={() => onClick(index)}>
+				<SearchResultLi
+					key={index}
+					onClick={() => onClick(index)}
+					selected={
+						calculateSelected().arrayType === "recentSearches" &&
+						calculateSelected().idx === idx
+					}
+				>
 					{item}
 				</SearchResultLi>
 			))}
