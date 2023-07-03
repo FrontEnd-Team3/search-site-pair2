@@ -1,96 +1,65 @@
-import { axiosInstance } from "apis/@core";
+import RecentSearchesLi from "components/RecentSearchesLi";
+import SearchBox from "components/SearchBox";
+import SearchBtn from "components/SearchBtn";
+import SearchResult from "components/SearchResult";
 import useDebounce from "hooks/useDebounce";
-import { useEffect, useState } from "react";
+import useRecentSearches from "hooks/useRecentSearches";
+import useSearch from "hooks/useSearch";
+import { useState } from "react";
 import styled from "styled-components";
 import { flexCenter } from "styles/common";
 
 const Main = () => {
 	const [searchInputValue, setSearchInputValue] = useState("");
-	const [searchState, setSearchState] = useState(false);
 	const debouncedSearch = useDebounce(searchInputValue, 500);
-	const [searchResults, setSearchResults] = useState([]);
-	const [recentSearches, setRecentSearches] = useState([]);
+	const { searchResults, searchState, setSearchResults } =
+		useSearch(debouncedSearch);
+	const { recentSearches, handleAddLocal } = useRecentSearches();
 
-	useEffect(() => {
-		const recentSearches =
-			JSON.parse(localStorage.getItem("recentSearches")) || [];
-		setRecentSearches(recentSearches);
-	}, []);
-
-	// API 호출 함수
-	const getSearchInfos = async searchInputValue => {
-		try {
-			const { data } = await axiosInstance.get("?key=" + searchInputValue);
-			setSearchResults(data);
-			console.log(searchResults);
-			setSearchState(true);
-		} catch (err) {
-			console.log("err");
-		}
+	const handleSearchResultClick = index => {
+		const searchResult = searchResults[index];
+		setSearchInputValue(searchResult);
 	};
 
-	useEffect(() => {
-		if (debouncedSearch) {
-			getSearchInfos(debouncedSearch);
-		} else {
-			setSearchState(false);
+	const handleKeyPress = event => {
+		if (event.key === "Enter") {
+			// Enter키를 눌렀을 때
+			handleAddLocal(debouncedSearch);
 		}
-	}, [debouncedSearch]);
-
-	const handleAddLocal = () => {
-		const newRecentSearches = recentSearches.filter(
-			search => search !== debouncedSearch,
-		);
-		newRecentSearches.unshift(debouncedSearch);
-		const recentSearchesLimited = newRecentSearches.slice(0, 5);
-		setRecentSearches(recentSearchesLimited);
-		localStorage.setItem(
-			"recentSearches",
-			JSON.stringify(recentSearchesLimited),
-		);
 	};
 
 	return (
 		<>
-			<MainTextBox>
-				<MainH1>Goooogle</MainH1>
-			</MainTextBox>
 			<MainContainer>
 				<MainSearchBox>
 					<SearchBox
+						value={searchInputValue}
 						onChange={e => setSearchInputValue(e.target.value)}
-						placeholder="Search"
-						onKeyPress={e => {
-							if (e.key === "Enter") {
-								handleAddLocal();
-							}
-						}}
+						onKeyPress={handleKeyPress}
 					/>
-					<SearchBtn onClick={handleAddLocal}>Google 검색</SearchBtn>
+					<SearchBtn onClick={() => handleAddLocal(debouncedSearch)} />
 				</MainSearchBox>
+				<ResultBox>
+					{searchState && searchResults.length > 0 && (
+						<>
+							<SearchResult
+								data={searchResults}
+								onClick={handleSearchResultClick}
+							/>
+						</>
+					)}
+				</ResultBox>
+				{recentSearches && recentSearches.length > 0 && (
+					<RecentBox>
+						<RecentTextBox>
+							<p>최근 검색어</p>
+						</RecentTextBox>
 
-				{searchState && searchResults.length > 0 && (
-					<SearchResultsList>
-						{searchResults.map((result, idx) => (
-							<SearchResult key={idx}>{result}</SearchResult>
-						))}
-					</SearchResultsList>
-				)}
-
-				{recentSearches.length > 0 && (
-					<RecentSearchesContainer>
-						<RecentSearchesTitle>최근 검색어</RecentSearchesTitle>
-						<RecentSearchesUl>
-							{recentSearches.map((recentSearch, idx) => (
-								<RecentSearchesLi
-									key={idx}
-									onClick={() => setSearchInputValue(recentSearch)}
-								>
-									{recentSearch}
-								</RecentSearchesLi>
-							))}
-						</RecentSearchesUl>
-					</RecentSearchesContainer>
+						<RecentSearchesLi
+							data={recentSearches}
+							onClick={idx => setSearchInputValue(recentSearches[idx])}
+						/>
+					</RecentBox>
 				)}
 			</MainContainer>
 		</>
@@ -99,118 +68,37 @@ const Main = () => {
 
 export default Main;
 
-const MainTextBox = styled.div`
-	${flexCenter}
-	width: 100%;
-	height: 200px;
-	background: #f2f2f2;
-`;
-
-const MainH1 = styled.h1`
-	font-size: 70px;
-	font-weight: 800;
-	color: #111;
-`;
-
 const MainContainer = styled.div`
 	padding: 20px;
 `;
 
 const MainSearchBox = styled.div`
+	${flexCenter}
 	width: 100%;
 	margin-bottom: 20px;
+	display: flex;
+	flex-direction: row;
 `;
 
-const SearchBox = styled.input`
-	width: 85%;
-	height: 40px;
-	padding: 10px;
-	border: 1px solid #dadce0;
-	border-radius: 10px 0 0 10px;
-	font-size: 18px;
-	line-height: 24px;
-	&:focus {
-		outline: none;
-	}
-`;
-
-const SearchBtn = styled.button`
-	padding: 6px 16px;
-	border-radius: 0 10px 10px 0;
-	background-color: #f8f9fa;
-	border: 1px solid #dadce0;
-	border-left: none;
-	font-size: 18px;
-	line-height: 24px;
-	&:hover {
-		cursor: pointer;
-		background-color: blue;
-		color: white;
-	}
-`;
-
-const SearchResultsList = styled.ul`
-	padding: 20px;
-	background-color: white;
-	border: 0.8px solid grey;
-	border-radius: 12px;
-`;
-
-const SearchResult = styled.li`
-	list-style: none;
+const ResultBox = styled.div`
+	${flexCenter}
+	width: 800px
 	margin-bottom: 20px;
-	color: black;
+	display: flex;
+	flex-direction: column;
 `;
 
-const SearchResultTitle = styled.a`
-	font-size: 20px;
-	font-weight: 700;
-	text-decoration: none;
-	color: #1a0dab;
-	&:hover {
-		text-decoration: underline;
-	}
-`;
-
-const SearchResultLink = styled.span`
-	margin-left: 10px;
-	color: #70757a;
-`;
-
-const SearchResultSnippet = styled.p`
-	font-size: 16px;
-	line-height: 22px;
-	color: #4f5b66;
-	margin-top: 10px;
-`;
-
-const RecentSearchesContainer = styled.div`
-	margin-top: 20px;
-	padding: 20px;
+const RecentBox = styled.div`
+	width: 57%;
+	padding: 20px 20px 10px 20px;
 	background-color: white;
-	border: 0.8px solid grey;
+	border: 1px solid #dadce0;
 	border-radius: 12px;
-`;
-
-const RecentSearchesTitle = styled.h3`
-	font-size: 18px;
-	font-weight: 700;
-	margin-bottom: 10px;
-`;
-
-const RecentSearchesUl = styled.ul`
-	padding: 0;
-	margin: 0;
 	list-style: none;
+	margin: 0 auto;
 `;
 
-const RecentSearchesLi = styled.li`
-	cursor: pointer;
-	margin-bottom: 10px;
-	font-size: 16px;
-	line-height: 22px;
-	color: #4f5b66;
-	&:hover {
-		text-decoration: underline;
-	}
+const RecentTextBox = styled.div`
+	padding-bottom: 20px;
+	color: blue;
 `;

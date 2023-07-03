@@ -13,7 +13,7 @@ const GlobalStyles = createGlobalStyle`
   }
 
   body {
-    background-color: #f8f8f8;
+    background-color: #F2F2F2;
   }
 
   button {
