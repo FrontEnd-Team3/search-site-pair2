@@ -1,7 +1,6 @@
 import styled from "styled-components";
 
 function SearchResult({ data, onClick }) {
-    
 	return (
 		<SearchResultsUl>
 			<ResultTextBox>

@@ -16,6 +16,7 @@ const useSearch = inputValue => {
 	const getSearchInfos = async inputValue => {
 		try {
 			const { data } = await axiosInstance.get("?key=" + inputValue);
+			console.log(data);
 			setSearchResults(data);
 			setSearchState(true);
 		} catch (err) {
