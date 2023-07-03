@@ -1,42 +1,35 @@
-import { axiosInstance } from "apis/@core";
-import ScrollListEventHandler from "hooks/scrollList";
+
+import RecentSearchesLi from "components/RecentSearchesLi";
+import SearchBox from "components/SearchBox";
+import SearchBtn from "components/SearchBtn";
+import SearchResult from "components/SearchResult";
 import useDebounce from "hooks/useDebounce";
+import useRecentSearches from "hooks/useRecentSearches";
+import useSearch from "hooks/useSearch";
 import { useEffect, useState } from "react";
 import styled from "styled-components";
 import { flexCenter } from "styles/common";
+import ScrollListEventHandler from "hooks/scrollList";
 
 const Main = () => {
 	const [searchInputValue, setSearchInputValue] = useState("");
-	const [searchState, setSearchState] = useState(false);
 	const debouncedSearch = useDebounce(searchInputValue, 500);
-	const [searchResults, setSearchResults] = useState([]);
-	const [recentSearches, setRecentSearches] = useState([]);
+	const { searchResults, searchState, setSearchResults } =
+		useSearch(debouncedSearch);
+	const { recentSearches, handleAddLocal } = useRecentSearches();
 	const [selectedIndex, setSelectedIndex] = useState(null);
 
-	useEffect(() => {
-		const recentSearches =
-			JSON.parse(localStorage.getItem("recentSearches")) || [];
-		setRecentSearches(recentSearches);
-	}, []);
-
-	useEffect(() => {
-		setSelectedIndex(null);
-	}, [searchResults, setSearchResults]);
-
-	// API 호출 함수
-	const getSearchInfos = async searchInputValue => {
-		try {
-			const { data } = await axiosInstance.get("?key=" + searchInputValue);
-			setSearchResults(data);
-			console.log(searchResults);
-			setSearchState(true);
-		} catch (err) {
-			console.log("err");
-			// setSearchResults([]);
-		}
+	const handleSearchResultClick = index => {
+		const searchResult = searchResults[index];
+		setSearchInputValue(searchResult);
 	};
 
-	//
+	const handleKeyPress = event => {
+		if (event.key === "Enter") {
+			// Enter키를 눌렀을 때
+			handleAddLocal(debouncedSearch);
+		}
+	};
 
 	const calculateSelected = () => {
 		if (!searchState)
@@ -49,13 +42,6 @@ const Main = () => {
 		};
 	};
 
-	useEffect(() => {
-		if (debouncedSearch) {
-			getSearchInfos(debouncedSearch);
-		} else {
-			setSearchState(false);
-		}
-	}, [debouncedSearch]);
 
 	useEffect(() => {
 		let queries;
@@ -65,6 +51,7 @@ const Main = () => {
 			queries,
 			selectedIndex,
 			setSelectedIndex,
+
 		);
 		document.addEventListener("keydown", eventHandler);
 
@@ -73,77 +60,40 @@ const Main = () => {
 		};
 	}, [selectedIndex]);
 
-	const handleAddLocal = () => {
-		const newRecentSearches = recentSearches.filter(
-			search => search !== debouncedSearch,
-		);
-		newRecentSearches.unshift(debouncedSearch);
-		const recentSearchesLimited = newRecentSearches.slice(0, 5);
-		setRecentSearches(recentSearchesLimited);
-		localStorage.setItem(
-			"recentSearches",
-			JSON.stringify(recentSearchesLimited),
-		);
-	};
-
 	return (
 		<>
-			<MainTextBox>
-				<MainH1>Goooogle</MainH1>
-			</MainTextBox>
 			<MainContainer>
 				<MainSearchBox>
 					<SearchBox
+						value={searchInputValue}
 						onChange={e => setSearchInputValue(e.target.value)}
-						placeholder="Search"
-						onKeyPress={e => {
-							if (e.key === "Enter") {
-								handleAddLocal();
-							}
-						}}
+						onKeyPress={handleKeyPress}
 					/>
-					<SearchBtn onClick={handleAddLocal}>Google 검색</SearchBtn>
+					<SearchBtn onClick={() => handleAddLocal(debouncedSearch)} />
 				</MainSearchBox>
-
-				{searchState && searchResults.length > 0 && (
-					<SearchResultsList>
-						{searchResults.map((result, idx) => (
+				<ResultBox>
+					{searchState && searchResults.length > 0 && (
+						<>
 							<SearchResult
-								key={idx}
-								selected={
-									calculateSelected().arrayType === "searchResults" &&
-									calculateSelected().idx === idx
-								}
-							>
-								{result}
-							</SearchResult>
-						))}
-					</SearchResultsList>
-				)}
+								calculateSelected={calculateSelected}
+								data={searchResults}
+								onClick={handleSearchResultClick}
+							/>
+						</>
+					)}
+				</ResultBox>
+				{recentSearches && recentSearches.length > 0 && (
+					<RecentBox>
+						<RecentTextBox>
+							<p>최근 검색어</p>
+						</RecentTextBox>
 
-				{recentSearches.length > 0 && (
-					<RecentSearchesContainer>
-						<RecentSearchesTitle>최근 검색어</RecentSearchesTitle>
-						<RecentSearchesUl>
-							{recentSearches.map((recentSearch, idx) => (
-								<RecentSearchesLi
-									key={idx}
-									onClick={() => setSearchInputValue(recentSearch)}
-									selected={
-										calculateSelected().arrayType === "recentSearches" &&
-										calculateSelected().idx === idx
-									}
-								>
-									{console.log(calculateSelected())}
-									{console.log(
-										calculateSelected().arrayType === "recentSearches" &&
-											calculateSelected().idx === idx,
-									)}
-									{recentSearch}
-								</RecentSearchesLi>
-							))}
-						</RecentSearchesUl>
-					</RecentSearchesContainer>
+						<RecentSearchesLi
+							calculateSelected={calculateSelected}
+							data={recentSearches}
+							onClick={() => setSearchInputValue}
+						/>
+					</RecentBox>
 				)}
 			</MainContainer>
 		</>
@@ -152,120 +102,40 @@ const Main = () => {
 
 export default Main;
 
-const MainTextBox = styled.div`
-	${flexCenter}
-	width: 100%;
-	height: 200px;
-	background: #f2f2f2;
-`;
-
-const MainH1 = styled.h1`
-	font-size: 70px;
-	font-weight: 800;
-	color: #111;
-`;
-
 const MainContainer = styled.div`
 	padding: 20px;
 `;
 
 const MainSearchBox = styled.div`
+	${flexCenter}
 	width: 100%;
 	margin-bottom: 20px;
+	display: flex;
+	flex-direction: row;
 `;
 
-const SearchBox = styled.input`
-	width: 85%;
-	height: 40px;
-	padding: 10px;
-	border: 1px solid #dadce0;
-	border-radius: 10px 0 0 10px;
-	font-size: 18px;
-	line-height: 24px;
-	&:focus {
-		outline: none;
-	}
-`;
-
-const SearchBtn = styled.button`
-	padding: 6px 16px;
-	border-radius: 0 10px 10px 0;
-	background-color: #f8f9fa;
-	border: 1px solid #dadce0;
-	border-left: none;
-	font-size: 18px;
-	line-height: 24px;
-	&:hover {
-		cursor: pointer;
-		background-color: blue;
-		color: white;
-	}
-`;
-
-const SearchResultsList = styled.ul`
-	padding: 20px;
-	background-color: white;
-	border: 0.8px solid grey;
-	border-radius: 12px;
-`;
-
-const SearchResult = styled.li`
-	list-style: none;
+const ResultBox = styled.div`
+	${flexCenter}
+	width: 800px
 	margin-bottom: 20px;
+	display: flex;
+	flex-direction: column;
 	color: black;
 	background-color: ${({ selected }) => (selected ? "#d9d9d9" : "transparent")};
 `;
 
-const SearchResultTitle = styled.a`
-	font-size: 20px;
-	font-weight: 700;
-	text-decoration: none;
-	color: #1a0dab;
-	&:hover {
-		text-decoration: underline;
-	}
-`;
-
-const SearchResultLink = styled.span`
-	margin-left: 10px;
-	color: #70757a;
-`;
-
-const SearchResultSnippet = styled.p`
-	font-size: 16px;
-	line-height: 22px;
-	color: #4f5b66;
-	margin-top: 10px;
-`;
-
-const RecentSearchesContainer = styled.div`
-	margin-top: 20px;
-	padding: 20px;
+const RecentBox = styled.div`
+	width: 57%;
+	padding: 20px 20px 10px 20px;
 	background-color: white;
-	border: 0.8px solid grey;
+	border: 1px solid #dadce0;
 	border-radius: 12px;
-`;
-
-const RecentSearchesTitle = styled.h3`
-	font-size: 18px;
-	font-weight: 700;
-	margin-bottom: 10px;
-`;
-
-const RecentSearchesUl = styled.ul`
-	padding: 0;
-	margin: 0;
 	list-style: none;
+	margin: 0 auto;
 `;
 
-const RecentSearchesLi = styled.li`
-	cursor: pointer;
-	margin-bottom: 10px;
-	font-size: 16px;
-	line-height: 22px;
-	color: #4f5b66;
-	&:hover {
-		text-decoration: underline;
-	}
-	background-color: ${({ selected }) => (selected ? "#d9d9d9" : "transparent")};
+
+const RecentTextBox = styled.div`
+	padding-bottom: 20px;
+	color: blue;
 `;
