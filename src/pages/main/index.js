@@ -1,3 +1,4 @@
+
 import RecentSearchesLi from "components/RecentSearchesLi";
 import SearchBox from "components/SearchBox";
 import SearchBtn from "components/SearchBtn";
@@ -41,6 +42,7 @@ const Main = () => {
 		};
 	};
 
+
 	useEffect(() => {
 		let queries;
 		if (!searchState) queries = recentSearches;
@@ -49,6 +51,7 @@ const Main = () => {
 			queries,
 			selectedIndex,
 			setSelectedIndex,
+
 		);
 		document.addEventListener("keydown", eventHandler);
 
@@ -130,6 +133,7 @@ const RecentBox = styled.div`
 	list-style: none;
 	margin: 0 auto;
 `;
+
 
 const RecentTextBox = styled.div`
 	padding-bottom: 20px;
