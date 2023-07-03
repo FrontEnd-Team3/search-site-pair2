@@ -10,6 +10,9 @@ const useRecentSearches = () => {
 	}, []);
 
 	const handleAddLocal = newSearchValue => {
+		if (newSearchValue.trim() === "") {
+			return;
+		}
 		const newRecentSearches = recentSearches.filter(
 			search => search !== newSearchValue,
 		);
