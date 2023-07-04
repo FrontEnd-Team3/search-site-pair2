@@ -15,7 +15,7 @@
   <h2>배포 링크</h2>
 
   <h3>vercel</h3>
-
+  https://search-site-pair2.vercel.app/
 
 
   <h3>glitch</h3>
