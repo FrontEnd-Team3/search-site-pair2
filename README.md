@@ -24,21 +24,27 @@
 
   <br>
 
-  <h4>API 최적화 방법, CORS 에러와 조치에 대해 노션 정리</h4>
+  <h2>API 최적화 방법, CORS 에러와 조치에 대해 노션 정리</h2>
   성경: https://www.notion.so/1a346f1005c64e928c0c8b678ac78f00#bbf9c4dcb9744d46a7c1cdfe1076445f <br>
   현우:
   <br>
+    <br>
+      <br>
   
-  <h4>프로젝트 과정 노션 정리</h4>
+  <h2>프로젝트 과정 노션 정리</h2>
   [pair2]: https://www.notion.so/2-add02012905f4f5ba3bc92b4b88abd49
 
   <br>
+    <br>
+      <br>
 
   <h2> 팀원</h2> 
 
    <img src="https://avatars.githubusercontent.com/u/71064896?v=4" width="150">  <img src="https://avatars.githubusercontent.com/u/123868471?v=4" width="150"> 
    <br>
   [오현우](https://github.com/ohwphil) || [지성경](https://github.com/zivivle)
+    <br>
+      <br>
 
   
   
